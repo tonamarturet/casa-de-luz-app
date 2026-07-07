@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Casa de Luz — Control de Cobros</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --pink:#F02D8E;
+    --pink-dark:#C4166E;
+    --cream:#FBF3E4;
+    --black:#1A1613;
+    --white:#FFFFFF;
+    --gray:#8A8078;
+    --line:#E8DDD0;
+    --ok:#1F8A5C;
+    --warn:#D14343;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;}
+  #app{
+    font-family:'Archivo',sans-serif;
+    background:var(--cream);
+    color:var(--black);
+    min-height:100%;
+    padding:0 0 40px 0;
+  }
+  .header{
+    background:var(--pink);
+    padding:20px 24px 16px;
+    color:var(--white);
+  }
+  .header h1{
+    font-family:'Anton',sans-serif;
+    font-size:34px;
+    letter-spacing:0.5px;
+    margin:0;
+    line-height:0.95;
+  }
+  .header p{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    margin:6px 0 0;
+    text-transform:uppercase;
+    letter-spacing:1.5px;
+    opacity:0.9;
+  }
+  .tabs{
+    display:flex;
+    gap:6px;
+    padding:14px 24px 0;
+    background:var(--pink);
+    flex-wrap:wrap;
+  }
+  .tab-btn{
+    font-family:'Archivo',sans-serif;
+    font-weight:700;
+    font-size:13px;
+    padding:10px 16px;
+    border:none;
+    border-radius:8px 8px 0 0;
+    background:rgba(255,255,255,0.18);
+    color:var(--white);
+    cursor:pointer;
+  }
+  .tab-btn.active{
+    background:var(--cream);
+    color:var(--black);
+  }
+  .subtabs{
+    display:flex;
+    gap:6px;
+    padding:10px 24px 0;
+    background:var(--black);
+    flex-wrap:wrap;
+  }
+  .subtab-btn{
+    font-family:'Archivo',sans-serif;
+    font-weight:700;
+    font-size:12px;
+    padding:8px 14px;
+    border:none;
+    border-radius:8px 8px 0 0;
+    background:rgba(255,255,255,0.12);
+    color:var(--white);
+    cursor:pointer;
+  }
+  .subtab-btn.active{
+    background:var(--cream);
+    color:var(--black);
+  }
+  .content{
+    max-width:760px;
+    margin:0 auto;
+    padding:24px;
+  }
+  .card{
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:18px;
+    margin-bottom:16px;
+  }
+  .card h2{
+    font-family:'Anton',sans-serif;
+    font-size:19px;
+    margin:0 0 12px;
+    letter-spacing:0.3px;
+  }
+  .row{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-bottom:10px;
+  }
+  .chip{
+    font-family:'IBM Plex Mono',monospace;
+    font-weight:600;
+    font-size:15px;
+    border:2px solid var(--black);
+    border-radius:999px;
+    padding:8px 16px;
+    background:var(--white);
+    cursor:pointer;
+  }
+  .chip.selected{
+    background:var(--black);
+    color:var(--white);
+  }
+  input[type=text], input[type=number], input[type=tel], select, textarea{
+    font-family:'Archivo',sans-serif;
+    font-size:14px;
+    padding:10px 12px;
+    border:1px solid var(--line);
+    border-radius:6px;
+    width:100%;
+  }
+  label{
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.8px;
+    color:var(--gray);
+    font-weight:700;
+    display:block;
+    margin-bottom:4px;
+  }
+  .field{
+    flex:1;
+    min-width:140px;
+  }
+  .btn{
+    font-family:'Archivo',sans-serif;
+    font-weight:700;
+    font-size:14px;
+    padding:11px 18px;
+    border:none;
+    border-radius:7px;
+    background:var(--pink);
+    color:var(--white);
+    cursor:pointer;
+  }
+  .btn:hover{ background:var(--pink-dark); }
+  .btn.secondary{
+    background:var(--black);
+  }
+  .btn.ghost{
+    background:transparent;
+    color:var(--gray);
+    border:1px solid var(--line);
+    font-weight:600;
+    padding:6px 10px;
+    font-size:12px;
+  }
+  .list-item{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:10px 0;
+    border-bottom:1px solid var(--line);
+    font-size:13px;
+  }
+  .list-item:last-child{ border-bottom:none; }
+  .mono{ font-family:'IBM Plex Mono',monospace; }
+  .tag-efectivo{
+    background:#FCEFD9; color:#8A5A00; font-weight:700; font-size:11px;
+    padding:2px 8px; border-radius:999px; font-family:'IBM Plex Mono',monospace;
+  }
+  .tag-qr{
+    background:#E4F3EC; color:var(--ok); font-weight:700; font-size:11px;
+    padding:2px 8px; border-radius:999px; font-family:'IBM Plex Mono',monospace;
+  }
+  .receipt{
+    background:var(--black);
+    color:var(--cream);
+    border-radius:10px;
+    padding:22px;
+    font-family:'IBM Plex Mono',monospace;
+  }
+  .receipt .row-total{
+    display:flex;
+    justify-content:space-between;
+    padding:8px 0;
+    border-bottom:1px dashed rgba(255,255,255,0.25);
+    font-size:14px;
+  }
+  .receipt .row-total.big{
+    font-size:22px;
+    font-weight:600;
+    border-bottom:none;
+    border-top:2px solid var(--pink);
+    margin-top:6px;
+    padding-top:14px;
+  }
+  .diff-ok{ color:#7CE0B0; }
+  .diff-bad{ color:#FF8A8A; }
+  .empty{
+    color:var(--gray);
+    font-size:13px;
+    font-style:italic;
+    padding:10px 0;
+  }
+  .premio-box{
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:12px;
+    margin-bottom:10px;
+  }
+  .premio-box .top{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:6px;
+  }
+  .winner-banner{
+    background:var(--pink);
+    color:var(--white);
+    border-radius:6px;
+    padding:8px 12px;
+    font-size:13px;
+    font-weight:700;
+    margin-top:8px;
+  }
+  .small-note{
+    font-size:11px;
+    color:var(--gray);
+    margin-top:4px;
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div class="header">
+    <h1>CASA DE LUZ</h1>
+    <p>Control de cobros · Pop up solidario · 11 julio</p>
+  </div>
+  <div id="tabs"></div>
+  <div class="content" id="content"></div>
+</div>
+
+<script>
+const STORAGE_KEY = 'casa-de-luz-cobros-v1';
+let saving = false;
+
+function uid(){ return Math.random().toString(36).slice(2,10); }
+
+let state = {
+  activeGroup: 'facturacion',
+  activeSubTabByGroup: { facturacion: 'ventas', ejecucion: 'inventario' },
+  ventas: [],
+  productosInventario: [
+    { id: uid(), nombre: 'Pizza', precio: 10, cantidadInicial: 0 },
+    { id: uid(), nombre: 'Bebida', precio: 3, cantidadInicial: 0 },
+    { id: uid(), nombre: 'Virgen', precio: 15, cantidadInicial: 0 },
+    { id: uid(), nombre: 'Vela', precio: 25, cantidadInicial: 0 }
+  ],
+  premios: [],
+  sorteoParticipantes: [],
+  sorteoGanadores: {},
+  subastaItems: [],
+  cierre: { efectivoContado: '', notas: '' }
+};
+
+let uiTmp = {
+  ventaMonto: '',
+  ventaMetodo: 'efectivo',
+  ventaProducto: '',
+  ventaProductoOtro: '',
+  invNombre: '',
+  invPrecio: '',
+  invCantidad: '',
+  nuevoPremio: '',
+  partNombre: '',
+  partTelefono: '',
+  partEmail: '',
+  partMetodo: 'efectivo',
+  partMonto: '',
+  partPaquete: '',
+  partCantidadTickets: '',
+  partNumero: '',
+  numeroGanadorTmp: {},
+  itemNombre: '',
+  itemRef: '',
+  itemMin: '',
+  pujaSeleccionItem: '',
+  pujaNombre: '',
+  pujaTelefono: '',
+  pujaMonto: ''
+};
+
+const PAQUETES_TICKETS = {
+  individual: { cantidad: 1, monto: 5, label: 'Individual (5€/ticket)' },
+  doce: { cantidad: 12, monto: 50, label: 'Pack 12 (50€)' },
+  treinta: { cantidad: 30, monto: 100, label: 'Pack 30 (100€)' }
+};
+
+const RANGOS_NUMERO = {
+  individual: [1, 999],
+  doce: [1000, 1999],
+  treinta: [2000, 2999]
+};
+
+function siguienteNumero(paquete){
+  const rango = RANGOS_NUMERO[paquete];
+  if(!rango) return '';
+  const [inicio, fin] = rango;
+  const usados = state.sorteoParticipantes
+    .map(p=>parseInt(p.numero))
+    .filter(n=>!isNaN(n) && n>=inicio && n<=fin);
+  if(usados.length===0) return String(inicio);
+  return String(Math.max(...usados)+1);
+}
+
+function buscarPorNumero(numero){
+  return state.sorteoParticipantes.find(p=>String(p.numero)===String(numero));
+}
+
+async function loadState(silencioso){
+  try{
+    const r = await fetch('/api/state');
+    const data = await r.json();
+    if(data){
+      state = Object.assign(state, data);
+    }
+  }catch(e){
+    console.error('Error cargando estado', e);
+    if(!silencioso) alert('No se pudo conectar con la base de datos. Revisa tu conexión a internet.');
+  }
+  render();
+}
+
+async function saveState(){
+  try{
+    const r = await fetch('/api/state', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(state)
+    });
+    if(!r.ok) throw new Error('Respuesta no OK: '+r.status);
+  }catch(e){
+    console.error('Error guardando', e);
+    alert('⚠️ No se pudo guardar en el servidor. Revisa tu conexión — este cambio podría no haberse sincronizado con las demás laptops.');
+  }
+}
+
+// Sincronización automática cada 8 segundos, para reflejar cambios hechos desde otras laptops
+setInterval(()=>{ loadState(true); }, 8000);
+
+function calcTotales(){
+  let efectivo = 0, qr = 0;
+  state.ventas.forEach(v=>{ if(v.metodo==='efectivo') efectivo+=v.monto; else qr+=v.monto; });
+  state.sorteoParticipantes.forEach(p=>{ if(p.metodo==='efectivo') efectivo+=p.monto; else qr+=p.monto; });
+  state.subastaItems.forEach(i=>{
+    if(i.pagada && i.metodoPago){
+      const ganadora = pujaMasAlta(i);
+      const monto = ganadora ? ganadora.monto : 0;
+      if(i.metodoPago==='efectivo') efectivo+=monto; else qr+=monto;
+    }
+  });
+  return { efectivo, qr, total: efectivo+qr };
+}
+
+function fmt(n){
+  return (Math.round((n||0)*100)/100).toLocaleString('es-ES',{minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+// ---------- ACCIONES ----------
+
+function registrarVenta(){
+  const monto = parseFloat(uiTmp.ventaMonto);
+  if(!monto || monto<=0){ alert('Ingresa un monto válido'); return; }
+  let producto = uiTmp.ventaProducto;
+  if(producto==='__otro__'){
+    producto = uiTmp.ventaProductoOtro.trim();
+  }
+  if(!producto){ alert('Elige o escribe el producto vendido'); return; }
+  state.ventas.push({ id: uid(), monto, metodo: uiTmp.ventaMetodo, producto, hora: new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'}) });
+  uiTmp.ventaMonto = '';
+  uiTmp.ventaProducto = '';
+  uiTmp.ventaProductoOtro = '';
+  saveState(); render();
+}
+
+function borrarVenta(id){
+  state.ventas = state.ventas.filter(v=>v.id!==id);
+  saveState(); render();
+}
+
+function agregarProductoInventario(){
+  const nombre = uiTmp.invNombre.trim();
+  const precio = parseFloat(uiTmp.invPrecio);
+  const cantidadInicial = parseInt(uiTmp.invCantidad) || 0;
+  if(!nombre){ alert('Ponle nombre al producto'); return; }
+  if(!precio || precio<=0){ alert('Ingresa un precio válido'); return; }
+  state.productosInventario.push({ id: uid(), nombre, precio, cantidadInicial });
+  uiTmp.invNombre=''; uiTmp.invPrecio=''; uiTmp.invCantidad='';
+  saveState(); render();
+}
+
+function editarProductoInventario(id, campo, valor){
+  const prod = state.productosInventario.find(p=>p.id===id);
+  if(!prod) return;
+  if(campo==='precio') prod.precio = parseFloat(valor) || 0;
+  else if(campo==='cantidadInicial') prod.cantidadInicial = parseInt(valor) || 0;
+  else if(campo==='nombre') prod.nombre = valor;
+  saveState();
+}
+
+function borrarProductoInventario(id){
+  state.productosInventario = state.productosInventario.filter(p=>p.id!==id);
+  saveState(); render();
+}
+
+function vendidosDeProducto(nombre){
+  return state.ventas.filter(v=>v.producto===nombre).length;
+}
+
+function recaudadoDeProducto(nombre){
+  return state.ventas.filter(v=>v.producto===nombre).reduce((a,v)=>a+v.monto,0);
+}
+
+function agregarPremio(){
+  const nombre = uiTmp.nuevoPremio.trim();
+  if(!nombre) return;
+  state.premios.push({ id: uid(), nombre });
+  uiTmp.nuevoPremio = '';
+  saveState(); render();
+}
+
+function borrarPremio(id){
+  if(state.sorteoGanadores[id]) delete state.sorteoGanadores[id];
+  state.premios = state.premios.filter(p=>p.id!==id);
+  saveState(); render();
+}
+
+function registrarParticipanteSorteo(){
+  const nombre = uiTmp.partNombre.trim();
+  const telefono = uiTmp.partTelefono.trim();
+  const email = uiTmp.partEmail.trim();
+  const monto = parseFloat(uiTmp.partMonto);
+  const cantidadTickets = parseInt(uiTmp.partCantidadTickets);
+  const paquete = uiTmp.partPaquete;
+
+  if(!nombre || !telefono){ alert('Nombre y teléfono son obligatorios (para poder contactar si gana)'); return; }
+  if(!paquete){ alert('Elige un paquete: individual, pack 12 o pack 30'); return; }
+  if(!cantidadTickets || cantidadTickets<=0){ alert('Ingresa la cantidad de tickets'); return; }
+  if(!monto || monto<=0){ alert('Ingresa el monto pagado'); return; }
+
+  const numero = (uiTmp.partNumero || siguienteNumero(paquete)).trim();
+  if(!numero){ alert('Falta el número de ticket'); return; }
+
+  const rango = RANGOS_NUMERO[paquete];
+  const numInt = parseInt(numero);
+  if(isNaN(numInt) || numInt < rango[0] || numInt > rango[1]){
+    alert(`Para este paquete, el número debe estar entre ${rango[0]} y ${rango[1]}.`);
+    return;
+  }
+  if(buscarPorNumero(numero)){ alert('Ese número de ticket ya está asignado a otra persona. Revisa el número.'); return; }
+
+  state.sorteoParticipantes.push({
+    id: uid(), numero, nombre, telefono, email, paquete,
+    cantidadTickets, monto, metodo: uiTmp.partMetodo,
+    hora: new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})
+  });
+  uiTmp.partNombre=''; uiTmp.partTelefono=''; uiTmp.partEmail=''; uiTmp.partMonto='';
+  uiTmp.partPaquete=''; uiTmp.partCantidadTickets=''; uiTmp.partNumero='';
+  saveState(); render();
+}
+
+function borrarParticipante(id){
+  state.sorteoParticipantes = state.sorteoParticipantes.filter(p=>p.id!==id);
+  saveState(); render();
+}
+
+function registrarGanadorPremio(premioId){
+  const numero = (uiTmp.numeroGanadorTmp[premioId]||'').trim();
+  if(!numero){ alert('Escribe el número que salió de la cajita'); return; }
+  state.sorteoGanadores[premioId] = numero;
+  saveState(); render();
+}
+
+function rehacerSorteo(premioId){
+  delete state.sorteoGanadores[premioId];
+  uiTmp.numeroGanadorTmp[premioId] = '';
+  saveState(); render();
+}
+
+function agregarItemSubasta(){
+  const nombre = uiTmp.itemNombre.trim();
+  const ref = parseFloat(uiTmp.itemRef) || 0;
+  const min = parseFloat(uiTmp.itemMin) || 0;
+  if(!nombre){ alert('Ponle nombre al artículo'); return; }
+  state.subastaItems.push({ id: uid(), nombre, precioRef: ref, minimo: min, pujas: [], cerrada:false, pagada:false, metodoPago:'' });
+  uiTmp.itemNombre=''; uiTmp.itemRef=''; uiTmp.itemMin='';
+  saveState(); render();
+}
+
+function borrarItemSubasta(id){
+  state.subastaItems = state.subastaItems.filter(i=>i.id!==id);
+  saveState(); render();
+}
+
+function pujaMasAlta(item){
+  if(!item.pujas || item.pujas.length===0) return null;
+  return item.pujas.reduce((a,b)=> b.monto>a.monto ? b : a);
+}
+
+function registrarPuja(itemId){
+  const item = state.subastaItems.find(i=>i.id===itemId);
+  if(!item) return;
+  if(item.cerrada){ alert('Esta subasta ya está cerrada, no se pueden registrar más pujas.'); return; }
+  const monto = parseFloat(uiTmp.pujaMonto);
+  const nombre = uiTmp.pujaNombre.trim();
+  const telefono = uiTmp.pujaTelefono.trim();
+  const actual = pujaMasAlta(item);
+  const pisoMinimo = actual ? actual.monto : (item.minimo - 0.01);
+  if(!nombre){ alert('Nombre de quien puja'); return; }
+  if(!monto || monto <= pisoMinimo){
+    alert('La puja debe ser mayor a la actual (o al mínimo si es la primera)');
+    return;
+  }
+  item.pujas.push({ id: uid(), nombre, telefono, monto, hora: new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'}) });
+  uiTmp.pujaNombre=''; uiTmp.pujaTelefono=''; uiTmp.pujaMonto='';
+  saveState(); render();
+}
+
+function cerrarSubasta(itemId){
+  const item = state.subastaItems.find(i=>i.id===itemId);
+  if(!item) return;
+  if(!item.pujas || item.pujas.length===0){ alert('Este artículo no tiene pujas todavía'); return; }
+  item.cerrada = true;
+  saveState(); render();
+}
+
+function marcarPagoSubasta(itemId, metodo){
+  const item = state.subastaItems.find(i=>i.id===itemId);
+  if(!item) return;
+  item.pagada = true;
+  item.metodoPago = metodo;
+  saveState(); render();
+}
+
+function reabrirSubasta(itemId){
+  const item = state.subastaItems.find(i=>i.id===itemId);
+  if(!item) return;
+  item.cerrada = false;
+  item.pagada = false;
+  item.metodoPago='';
+  saveState(); render();
+}
+
+function guardarCierre(){
+  saveState(); render();
+}
+
+// ---------- RENDER ----------
+
+const GRUPOS = [
+  ['facturacion','Facturación'],
+  ['ejecucion','Ejecución'],
+  ['caja','Corte de caja']
+];
+
+const SUBTABS = {
+  facturacion: [
+    ['ventas','Ventas'],
+    ['subasta','Subasta'],
+    ['sorteo','Sorteo']
+  ],
+  ejecucion: [
+    ['inventario','Ventas'],
+    ['productos-subasta','Subasta'],
+    ['ejecucion-sorteo','Sorteo']
+  ]
+};
+
+function setGroup(grupo){
+  state.activeGroup = grupo;
+  render();
+}
+
+function setSubTab(grupo, tab){
+  state.activeSubTabByGroup[grupo] = tab;
+  render();
+}
+
+function render(){
+  const tabsEl = document.getElementById('tabs');
+  let html = `<div class="tabs">${GRUPOS.map(([k,label])=>
+    `<button class="tab-btn ${state.activeGroup===k?'active':''}" onclick="setGroup('${k}')">${label}</button>`
+  ).join('')}</div>`;
+
+  if(state.activeGroup!=='caja'){
+    const sub = SUBTABS[state.activeGroup];
+    html += `<div class="subtabs">${sub.map(([k,label])=>
+      `<button class="subtab-btn ${state.activeSubTabByGroup[state.activeGroup]===k?'active':''}" onclick="setSubTab('${state.activeGroup}','${k}')">${label}</button>`
+    ).join('')}</div>`;
+  }
+  tabsEl.innerHTML = html;
+
+  const content = document.getElementById('content');
+  if(state.activeGroup==='caja'){
+    content.innerHTML = renderCaja();
+  } else if(state.activeGroup==='facturacion'){
+    const sub = state.activeSubTabByGroup.facturacion;
+    if(sub==='ventas') content.innerHTML = renderVentas();
+    else if(sub==='subasta') content.innerHTML = renderSubasta();
+    else content.innerHTML = renderSorteo();
+  } else {
+    const sub = state.activeSubTabByGroup.ejecucion;
+    if(sub==='inventario') content.innerHTML = renderInventarioVentas();
+    else if(sub==='productos-subasta') content.innerHTML = renderProductosSubasta();
+    else content.innerHTML = renderEjecucionSorteo();
+  }
+
+  attachHandlers();
+}
+
+function renderVentas(){
+  const precios = [5,10,15,20,50,100];
+  const totales = calcTotales();
+  return `
+  <div class="card">
+    <h2>Registrar venta directa</h2>
+    <div class="row">
+      ${precios.map(p=>`<div class="chip ${uiTmp.ventaMonto==String(p)?'selected':''}" data-precio="${p}">${p}€</div>`).join('')}
+    </div>
+    <div class="row">
+      <div class="field">
+        <label>Monto (o elige arriba)</label>
+        <input type="number" id="ventaMontoInput" value="${uiTmp.ventaMonto}" placeholder="Ej: 25">
+      </div>
+      <div class="field">
+        <label>Producto</label>
+        <select id="ventaProductoSelect">
+          <option value="" ${uiTmp.ventaProducto===''?'selected':''}>Elige un producto...</option>
+          ${state.productosInventario.map(p=>{
+            const disponible = p.cantidadInicial - vendidosDeProducto(p.nombre);
+            return `<option value="${p.nombre}" ${uiTmp.ventaProducto===p.nombre?'selected':''}>${p.nombre} (${p.precio}€) · quedan ${disponible}</option>`;
+          }).join('')}
+          <option value="__otro__" ${uiTmp.ventaProducto==='__otro__'?'selected':''}>Otro...</option>
+        </select>
+        ${uiTmp.ventaProducto==='__otro__' ? `<input type="text" id="ventaProductoOtroInput" value="${uiTmp.ventaProductoOtro}" placeholder="Escribe el producto" style="margin-top:6px;">` : ''}
+      </div>
+      <div class="field">
+        <label>Método de pago</label>
+        <div class="row">
+          <div class="chip ${uiTmp.ventaMetodo==='efectivo'?'selected':''}" data-metodo="efectivo">Efectivo</div>
+          <div class="chip ${uiTmp.ventaMetodo==='qr'?'selected':''}" data-metodo="qr">QR / THP</div>
+        </div>
+      </div>
+    </div>
+    <button class="btn" id="btnRegistrarVenta">Registrar venta</button>
+  </div>
+
+  <div class="card">
+    <h2>Ventas de hoy (${state.ventas.length})</h2>
+    ${state.ventas.length===0 ? '<div class="empty">Todavía no hay ventas registradas.</div>' :
+      state.ventas.slice().reverse().map(v=>`
+        <div class="list-item">
+          <span>${v.hora} · <strong>${v.producto||'—'}</strong> · <span class="${v.metodo==='efectivo'?'tag-efectivo':'tag-qr'}">${v.metodo==='efectivo'?'Efectivo':'QR'}</span></span>
+          <span class="mono">${fmt(v.monto)}€ <button class="btn ghost" data-borrarventa="${v.id}">✕</button></span>
+        </div>
+      `).join('')
+    }
+  </div>
+
+  <div class="card">
+    <h2>Subtotal ventas</h2>
+    <div class="list-item"><span>Efectivo</span><span class="mono">${fmt(state.ventas.filter(v=>v.metodo==='efectivo').reduce((a,v)=>a+v.monto,0))}€</span></div>
+    <div class="list-item"><span>QR</span><span class="mono">${fmt(state.ventas.filter(v=>v.metodo==='qr').reduce((a,v)=>a+v.monto,0))}€</span></div>
+  </div>
+  `;
+}
+
+function renderInventarioVentas(){
+  return `
+  <div class="card">
+    <h2>Añadir producto</h2>
+    <div class="row">
+      <div class="field">
+        <label>Nombre</label>
+        <input type="text" id="invNombreInput" value="${uiTmp.invNombre}">
+      </div>
+      <div class="field">
+        <label>Precio</label>
+        <input type="number" id="invPrecioInput" value="${uiTmp.invPrecio}">
+      </div>
+      <div class="field">
+        <label>Cantidad de entrada</label>
+        <input type="number" id="invCantidadInput" value="${uiTmp.invCantidad}">
+      </div>
+    </div>
+    <button class="btn secondary" id="btnAgregarProductoInventario">Añadir producto</button>
+  </div>
+
+  <div class="card">
+    <h2>Inventario (${state.productosInventario.length})</h2>
+    ${state.productosInventario.length===0 ? '<div class="empty">Todavía no hay productos cargados.</div>' :
+      state.productosInventario.map(p=>{
+        const vendidos = vendidosDeProducto(p.nombre);
+        const disponible = p.cantidadInicial - vendidos;
+        const recaudado = recaudadoDeProducto(p.nombre);
+        return `
+        <div class="premio-box">
+          <div class="top">
+            <strong>${p.nombre}</strong>
+            <button class="btn ghost" data-borrarproducto="${p.id}">✕</button>
+          </div>
+          <div class="row">
+            <div class="field">
+              <label>Precio</label>
+              <input type="number" data-editarprecio="${p.id}" value="${p.precio}">
+            </div>
+            <div class="field">
+              <label>Cantidad de entrada</label>
+              <input type="number" data-editarcantidad="${p.id}" value="${p.cantidadInicial}">
+            </div>
+          </div>
+          <div class="list-item">
+            <span>Vendidos: ${vendidos} · Recaudado: ${fmt(recaudado)}€</span>
+            <span class="mono" style="${disponible<0?'color:var(--warn);font-weight:700;':''}">Disponible: ${disponible}</span>
+          </div>
+        </div>
+        `;
+      }).join('')
+    }
+  </div>
+  `;
+}
+
+function renderEjecucionSorteo(){
+  return `
+  <div class="card">
+    <h2>Premios / cajitas del sorteo</h2>
+    <div class="row">
+      <div class="field">
+        <input type="text" id="nuevoPremioInput" placeholder="Nombre del premio (ej: Cena en X restaurante)" value="${uiTmp.nuevoPremio}">
+      </div>
+      <button class="btn secondary" id="btnAgregarPremio">Añadir premio</button>
+    </div>
+    ${state.premios.length===0 ? '<div class="empty">Añade los premios/cajitas que van a estar en el evento.</div>' :
+      state.premios.map(pr=>{
+        const numeroGanador = state.sorteoGanadores[pr.id];
+        const ganador = numeroGanador ? buscarPorNumero(numeroGanador) : null;
+        return `
+        <div class="premio-box">
+          <div class="top">
+            <strong>${pr.nombre}</strong>
+          </div>
+          ${numeroGanador
+            ? (ganador
+                ? `<div class="winner-banner">🏆 N.° ${numeroGanador} → ${ganador.nombre} · ${ganador.telefono}${ganador.email?' · '+ganador.email:''}</div>`
+                : `<div class="winner-banner" style="background:var(--warn);">⚠️ N.° ${numeroGanador} no coincide con ningún participante registrado. Revisa el número.</div>`
+              ) + `<button class="btn ghost" data-rehacer="${pr.id}">Corregir / repetir</button>`
+            : `
+              <div class="row">
+                <div class="field">
+                  <label>Número que salió de la cajita</label>
+                  <input type="text" data-numeroganador="${pr.id}" value="${uiTmp.numeroGanadorTmp[pr.id]||''}" placeholder="Ej: 2">
+                </div>
+              </div>
+              <button class="btn" data-buscarganador="${pr.id}">Buscar ganador</button>
+            `
+          }
+          <button class="btn ghost" data-borrarpremio="${pr.id}" style="margin-left:6px;">Eliminar premio</button>
+        </div>
+        `;
+      }).join('')
+    }
+  </div>
+  `;
+}
+
+function renderSorteo(){
+  return `
+  <div class="card">
+    <h2>Vender tickets</h2>
+    <div class="row">
+      <div class="field">
+        <label>Nombre</label>
+        <input type="text" id="partNombreInput" value="${uiTmp.partNombre}">
+      </div>
+      <div class="field">
+        <label>Teléfono</label>
+        <input type="tel" id="partTelefonoInput" value="${uiTmp.partTelefono}">
+      </div>
+      <div class="field">
+        <label>Email (opcional)</label>
+        <input type="text" id="partEmailInput" value="${uiTmp.partEmail}">
+      </div>
+    </div>
+    <label>Paquete</label>
+    <div class="row">
+      ${Object.entries(PAQUETES_TICKETS).map(([key,pk])=>`
+        <div class="chip ${uiTmp.partPaquete===key?'selected':''}" data-paquete="${key}">${pk.label}</div>
+      `).join('')}
+    </div>
+    <div class="small-note">Individual: tú defines la cantidad y el monto se calcula solo (5€ × tickets). Pack 12 y Pack 30 vienen a monto fijo.</div>
+    <br>
+    <div class="row">
+      <div class="field">
+        <label>Cantidad de tickets</label>
+        <input type="number" id="partCantidadInput" value="${uiTmp.partCantidadTickets}" placeholder="Ej: 12">
+      </div>
+      <div class="field">
+        <label>Monto pagado</label>
+        <input type="number" id="partMontoInput" value="${uiTmp.partMonto}" placeholder="Ej: 50">
+      </div>
+      <div class="field">
+        <label>Método</label>
+        <div class="row">
+          <div class="chip ${uiTmp.partMetodo==='efectivo'?'selected':''}" data-partmetodo="efectivo">Efectivo</div>
+          <div class="chip ${uiTmp.partMetodo==='qr'?'selected':''}" data-partmetodo="qr">QR / THP</div>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label>Número a asignar</label>
+        <input type="text" id="partNumeroInput" value="${uiTmp.partNumero}" placeholder="${uiTmp.partPaquete ? 'Sugerido: '+siguienteNumero(uiTmp.partPaquete) : 'Elige un paquete primero'}">
+      </div>
+    </div>
+    <div class="small-note">Individual: 1–999 · Pack 12: 1000–1999 · Pack 30: 2000–2999</div>
+    <br>
+    <button class="btn" id="btnRegistrarParticipante">Registrar y asignar número</button>
+  </div>
+
+  <div class="card">
+    <h2>Participantes del sorteo (${state.sorteoParticipantes.length})</h2>
+    ${state.sorteoParticipantes.length===0 ? '<div class="empty">Todavía no hay participantes.</div>' :
+      state.sorteoParticipantes.slice().reverse().map(p=>`
+        <div class="list-item">
+          <span><strong class="mono" style="font-size:15px;">N.° ${p.numero}</strong> · ${p.nombre} · ${p.telefono} · <span class="${p.metodo==='efectivo'?'tag-efectivo':'tag-qr'}">${p.metodo==='efectivo'?'Efectivo':'QR'}</span></span>
+          <span class="mono">${p.cantidadTickets} tickets · ${fmt(p.monto)}€ <button class="btn ghost" data-borrarparticipante="${p.id}">✕</button></span>
+        </div>
+      `).join('')
+    }
+  </div>
+  `;
+}
+
+function renderProductosSubasta(){
+  return `
+  <div class="card">
+    <h2>Añadir artículo a subasta</h2>
+    <div class="row">
+      <div class="field">
+        <label>Nombre del artículo</label>
+        <input type="text" id="itemNombreInput" value="${uiTmp.itemNombre}">
+      </div>
+      <div class="field">
+        <label>Precio de referencia (mercado)</label>
+        <input type="number" id="itemRefInput" value="${uiTmp.itemRef}">
+      </div>
+      <div class="field">
+        <label>Monto mínimo de salida</label>
+        <input type="number" id="itemMinInput" value="${uiTmp.itemMin}">
+      </div>
+    </div>
+    <button class="btn secondary" id="btnAgregarItem">Añadir artículo</button>
+  </div>
+
+  <div class="card">
+    <h2>Artículos registrados (${state.subastaItems.length})</h2>
+    ${state.subastaItems.length===0 ? '<div class="empty">Todavía no hay artículos en subasta.</div>' :
+      state.subastaItems.map(item=>{
+        const top = pujaMasAlta(item);
+        let estado = '';
+        if(item.pagada) estado = '· <span class="tag-qr">Pagada</span>';
+        else if(item.cerrada) estado = '· <span class="tag-efectivo">Cerrada, pago pendiente</span>';
+        else if(top) estado = `· <span class="tag-efectivo">${item.pujas.length} puja(s)</span>`;
+        return `
+        <div class="list-item">
+          <span><strong>${item.nombre}</strong> · Ref. ${fmt(item.precioRef)}€ · Mín. ${fmt(item.minimo)}€ ${estado}</span>
+          <span><button class="btn ghost" data-borraritem="${item.id}">✕</button></span>
+        </div>
+      `;
+      }).join('')
+    }
+  </div>
+  `;
+}
+
+function renderSubasta(){
+  return `
+  ${state.subastaItems.length===0 ? '<div class="card"><div class="empty">Todavía no hay artículos. Añádelos en Ejecución → Subasta.</div></div>' :
+    state.subastaItems.map(item=>{
+      const top = pujaMasAlta(item);
+      const pujasOrdenadas = (item.pujas||[]).slice().sort((a,b)=>b.monto-a.monto);
+      return `
+      <div class="card">
+        <h2>${item.nombre}</h2>
+        <div class="small-note">Ref. mercado: ${fmt(item.precioRef)}€ · Mínimo: ${fmt(item.minimo)}€</div>
+
+        ${pujasOrdenadas.length===0 ? '<div class="empty">Todavía no hay pujas para este artículo.</div>' : `
+          <div style="margin:10px 0;">
+            ${pujasOrdenadas.map(p=>`
+              <div class="list-item" style="${p.id===top.id?'background:#FCEFF6;border-radius:6px;padding:8px 10px;border-bottom:none;':''}">
+                <span>${p.id===top.id?'🏆 ':''}${p.nombre}${p.telefono?' · '+p.telefono:''}</span>
+                <span class="mono">${fmt(p.monto)}€</span>
+              </div>
+            `).join('')}
+          </div>
+        `}
+
+        ${item.pagada
+          ? `<div class="winner-banner">✅ Pagada · ${top.nombre} (${top.telefono}) · ${item.metodoPago==='efectivo'?'Efectivo':'QR'}</div>
+             <button class="btn ghost" data-reabrir="${item.id}">Reabrir</button>`
+          : item.cerrada
+            ? `<div class="winner-banner">🏆 Ganador: ${top.nombre} (${top.telefono}) por ${fmt(top.monto)}€ — avísale y espera su depósito</div>
+               <div style="margin-top:10px;">
+                 <span class="small-note">Marcar pago recibido:</span><br>
+                 <button class="btn secondary" data-marcarpago="${item.id}" data-metodo="efectivo">Recibido · Efectivo</button>
+                 <button class="btn secondary" data-marcarpago="${item.id}" data-metodo="qr">Recibido · QR</button>
+               </div>
+               <button class="btn ghost" data-reabrir="${item.id}" style="margin-top:8px;">Reabrir subasta</button>`
+            : `
+              <div class="row">
+                <div class="field"><label>Nombre</label><input type="text" data-pujanombre="${item.id}" value="${uiTmp.pujaSeleccionItem===item.id?uiTmp.pujaNombre:''}"></div>
+                <div class="field"><label>Teléfono</label><input type="tel" data-pujatelefono="${item.id}" value="${uiTmp.pujaSeleccionItem===item.id?uiTmp.pujaTelefono:''}"></div>
+                <div class="field"><label>Monto</label><input type="number" data-pujamonto="${item.id}" value="${uiTmp.pujaSeleccionItem===item.id?uiTmp.pujaMonto:''}"></div>
+              </div>
+              <button class="btn" data-registrarpuja="${item.id}">Registrar puja</button>
+              ${top ? `<button class="btn secondary" data-cerrarsubasta="${item.id}" style="margin-left:8px;">Cerrar subasta y declarar ganador</button>` : ''}
+            `
+        }
+      </div>
+      `;
+    }).join('')
+  }
+  `;
+}
+
+function renderCaja(){
+  const totales = calcTotales();
+  const contado = parseFloat(state.cierre.efectivoContado);
+  const hayContado = !isNaN(contado) && state.cierre.efectivoContado !== '';
+  const diferencia = hayContado ? contado - totales.efectivo : null;
+
+  return `
+  <div class="card">
+    <h2>Resumen de recaudación</h2>
+    <div class="list-item"><span>Ventas directas</span><span class="mono">${fmt(state.ventas.reduce((a,v)=>a+v.monto,0))}€</span></div>
+    <div class="list-item"><span>Sorteo</span><span class="mono">${fmt(state.sorteoParticipantes.reduce((a,p)=>a+p.monto,0))}€</span></div>
+    <div class="list-item"><span>Subasta (pagadas)</span><span class="mono">${fmt(state.subastaItems.filter(i=>i.pagada).reduce((a,i)=>{ const t=pujaMasAlta(i); return a+(t?t.monto:0); },0))}€</span></div>
+  </div>
+
+  <div class="receipt">
+    <div class="row-total"><span>EFECTIVO ESPERADO</span><span>${fmt(totales.efectivo)}€</span></div>
+    <div class="row-total"><span>QR / THP ESPERADO</span><span>${fmt(totales.qr)}€</span></div>
+    <div class="row-total big"><span>TOTAL</span><span>${fmt(totales.total)}€</span></div>
+  </div>
+
+  <div class="card" style="margin-top:16px;">
+    <h2>Corte de caja física</h2>
+    <div class="row">
+      <div class="field">
+        <label>Efectivo contado al final del día</label>
+        <input type="number" id="efectivoContadoInput" value="${state.cierre.efectivoContado}" placeholder="Ej: 480">
+      </div>
+    </div>
+    ${hayContado ? `
+      <div class="list-item">
+        <span>Diferencia vs. lo esperado</span>
+        <span class="mono ${diferencia===0?'':(diferencia>0?'':'diff-bad')}">${diferencia>0?'+':''}${fmt(diferencia)}€ ${diferencia===0?'✅ cuadra':''}</span>
+      </div>
+    ` : ''}
+    <label style="margin-top:8px;">Notas del cierre</label>
+    <textarea id="notasCierreInput" rows="2" placeholder="Ej: faltan 2 tickets de sorteo por cobrar...">${state.cierre.notas}</textarea>
+    <br><br>
+    <button class="btn" id="btnGuardarCierre">Guardar cierre</button>
+  </div>
+
+  <div class="card">
+    <h2>Contactos para avisar (ganadores)</h2>
+    ${Object.keys(state.sorteoGanadores).length===0 ? '<div class="empty">Aún no se han registrado resultados del sorteo.</div>' :
+      Object.entries(state.sorteoGanadores).map(([premioId, numero])=>{
+        const premio = state.premios.find(p=>p.id===premioId);
+        const ganador = buscarPorNumero(numero);
+        return `<div class="list-item"><span>${premio?premio.nombre:'Premio'} · N.° ${numero}</span><span class="mono">${ganador ? ganador.nombre+' · '+ganador.telefono : '⚠️ no encontrado'}</span></div>`;
+      }).join('')
+    }
+  </div>
+  `;
+}
+
+function attachHandlers(){
+  // Ventas
+  document.querySelectorAll('[data-precio]').forEach(el=>{
+    el.onclick = ()=>{ uiTmp.ventaMonto = el.getAttribute('data-precio'); render(); };
+  });
+  const ventaMontoInput = document.getElementById('ventaMontoInput');
+  if(ventaMontoInput) ventaMontoInput.oninput = (e)=>{ uiTmp.ventaMonto = e.target.value; };
+  const ventaProductoSelect = document.getElementById('ventaProductoSelect');
+  if(ventaProductoSelect) ventaProductoSelect.onchange = (e)=>{
+    uiTmp.ventaProducto = e.target.value;
+    const encontrado = state.productosInventario.find(p=>p.nombre===e.target.value);
+    if(encontrado){ uiTmp.ventaMonto = String(encontrado.precio); }
+    else if(e.target.value==='__otro__'){ uiTmp.ventaMonto = ''; }
+    render();
+  };
+  const ventaProductoOtroInput = document.getElementById('ventaProductoOtroInput');
+  if(ventaProductoOtroInput) ventaProductoOtroInput.oninput = (e)=>{ uiTmp.ventaProductoOtro = e.target.value; };
+  document.querySelectorAll('[data-metodo]').forEach(el=>{
+    el.onclick = ()=>{ uiTmp.ventaMetodo = el.getAttribute('data-metodo'); render(); };
+  });
+  const btnRegistrarVenta = document.getElementById('btnRegistrarVenta');
+  if(btnRegistrarVenta) btnRegistrarVenta.onclick = registrarVenta;
+  document.querySelectorAll('[data-borrarventa]').forEach(el=>{
+    el.onclick = ()=>borrarVenta(el.getAttribute('data-borrarventa'));
+  });
+
+  // Inventario de productos (Ejecución > Ventas)
+  const invNombreInput = document.getElementById('invNombreInput');
+  if(invNombreInput) invNombreInput.oninput = (e)=>{ uiTmp.invNombre = e.target.value; };
+  const invPrecioInput = document.getElementById('invPrecioInput');
+  if(invPrecioInput) invPrecioInput.oninput = (e)=>{ uiTmp.invPrecio = e.target.value; };
+  const invCantidadInput = document.getElementById('invCantidadInput');
+  if(invCantidadInput) invCantidadInput.oninput = (e)=>{ uiTmp.invCantidad = e.target.value; };
+  const btnAgregarProductoInventario = document.getElementById('btnAgregarProductoInventario');
+  if(btnAgregarProductoInventario) btnAgregarProductoInventario.onclick = agregarProductoInventario;
+  document.querySelectorAll('[data-borrarproducto]').forEach(el=>{
+    el.onclick = ()=>borrarProductoInventario(el.getAttribute('data-borrarproducto'));
+  });
+  document.querySelectorAll('[data-editarprecio]').forEach(el=>{
+    el.onchange = (e)=>{ editarProductoInventario(el.getAttribute('data-editarprecio'), 'precio', e.target.value); render(); };
+  });
+  document.querySelectorAll('[data-editarcantidad]').forEach(el=>{
+    el.onchange = (e)=>{ editarProductoInventario(el.getAttribute('data-editarcantidad'), 'cantidadInicial', e.target.value); render(); };
+  });
+
+  // Sorteo - premios
+  const nuevoPremioInput = document.getElementById('nuevoPremioInput');
+  if(nuevoPremioInput) nuevoPremioInput.oninput = (e)=>{ uiTmp.nuevoPremio = e.target.value; };
+  const btnAgregarPremio = document.getElementById('btnAgregarPremio');
+  if(btnAgregarPremio) btnAgregarPremio.onclick = agregarPremio;
+  document.querySelectorAll('[data-borrarpremio]').forEach(el=>{
+    el.onclick = ()=>borrarPremio(el.getAttribute('data-borrarpremio'));
+  });
+  document.querySelectorAll('[data-numeroganador]').forEach(el=>{
+    el.oninput = (e)=>{ uiTmp.numeroGanadorTmp[el.getAttribute('data-numeroganador')] = e.target.value; };
+  });
+  document.querySelectorAll('[data-buscarganador]').forEach(el=>{
+    el.onclick = ()=>registrarGanadorPremio(el.getAttribute('data-buscarganador'));
+  });
+  document.querySelectorAll('[data-rehacer]').forEach(el=>{
+    el.onclick = ()=>rehacerSorteo(el.getAttribute('data-rehacer'));
+  });
+
+  // Sorteo - participantes / venta de tickets
+  const partNombreInput = document.getElementById('partNombreInput');
+  if(partNombreInput) partNombreInput.oninput = (e)=>{ uiTmp.partNombre = e.target.value; };
+  const partTelefonoInput = document.getElementById('partTelefonoInput');
+  if(partTelefonoInput) partTelefonoInput.oninput = (e)=>{ uiTmp.partTelefono = e.target.value; };
+  const partEmailInput = document.getElementById('partEmailInput');
+  if(partEmailInput) partEmailInput.oninput = (e)=>{ uiTmp.partEmail = e.target.value; };
+  const partCantidadInput = document.getElementById('partCantidadInput');
+  if(partCantidadInput) partCantidadInput.oninput = (e)=>{
+    uiTmp.partCantidadTickets = e.target.value;
+    if(uiTmp.partPaquete === 'individual'){
+      const cantidad = parseInt(e.target.value) || 0;
+      uiTmp.partMonto = cantidad>0 ? String(cantidad*5) : '';
+      render();
+    }
+  };
+  const partMontoInput = document.getElementById('partMontoInput');
+  if(partMontoInput) partMontoInput.oninput = (e)=>{ uiTmp.partMonto = e.target.value; };
+  const partNumeroInput = document.getElementById('partNumeroInput');
+  if(partNumeroInput) partNumeroInput.oninput = (e)=>{ uiTmp.partNumero = e.target.value; };
+  document.querySelectorAll('[data-paquete]').forEach(el=>{
+    el.onclick = ()=>{
+      const key = el.getAttribute('data-paquete');
+      uiTmp.partPaquete = key;
+      uiTmp.partCantidadTickets = String(PAQUETES_TICKETS[key].cantidad);
+      uiTmp.partMonto = String(PAQUETES_TICKETS[key].monto);
+      uiTmp.partNumero = '';
+      render();
+    };
+  });
+  document.querySelectorAll('[data-partmetodo]').forEach(el=>{
+    el.onclick = ()=>{ uiTmp.partMetodo = el.getAttribute('data-partmetodo'); render(); };
+  });
+  const btnRegistrarParticipante = document.getElementById('btnRegistrarParticipante');
+  if(btnRegistrarParticipante) btnRegistrarParticipante.onclick = registrarParticipanteSorteo;
+  document.querySelectorAll('[data-borrarparticipante]').forEach(el=>{
+    el.onclick = ()=>borrarParticipante(el.getAttribute('data-borrarparticipante'));
+  });
+
+  // Subasta
+  const itemNombreInput = document.getElementById('itemNombreInput');
+  if(itemNombreInput) itemNombreInput.oninput = (e)=>{ uiTmp.itemNombre = e.target.value; };
+  const itemRefInput = document.getElementById('itemRefInput');
+  if(itemRefInput) itemRefInput.oninput = (e)=>{ uiTmp.itemRef = e.target.value; };
+  const itemMinInput = document.getElementById('itemMinInput');
+  if(itemMinInput) itemMinInput.oninput = (e)=>{ uiTmp.itemMin = e.target.value; };
+  const btnAgregarItem = document.getElementById('btnAgregarItem');
+  if(btnAgregarItem) btnAgregarItem.onclick = agregarItemSubasta;
+  document.querySelectorAll('[data-borraritem]').forEach(el=>{
+    el.onclick = ()=>borrarItemSubasta(el.getAttribute('data-borraritem'));
+  });
+  document.querySelectorAll('[data-pujanombre]').forEach(el=>{
+    el.oninput = (e)=>{ uiTmp.pujaSeleccionItem = el.getAttribute('data-pujanombre'); uiTmp.pujaNombre = e.target.value; };
+  });
+  document.querySelectorAll('[data-pujatelefono]').forEach(el=>{
+    el.oninput = (e)=>{ uiTmp.pujaSeleccionItem = el.getAttribute('data-pujatelefono'); uiTmp.pujaTelefono = e.target.value; };
+  });
+  document.querySelectorAll('[data-pujamonto]').forEach(el=>{
+    el.oninput = (e)=>{ uiTmp.pujaSeleccionItem = el.getAttribute('data-pujamonto'); uiTmp.pujaMonto = e.target.value; };
+  });
+  document.querySelectorAll('[data-registrarpuja]').forEach(el=>{
+    el.onclick = ()=>registrarPuja(el.getAttribute('data-registrarpuja'));
+  });
+  document.querySelectorAll('[data-cerrarsubasta]').forEach(el=>{
+    el.onclick = ()=>cerrarSubasta(el.getAttribute('data-cerrarsubasta'));
+  });
+  document.querySelectorAll('[data-marcarpago]').forEach(el=>{
+    el.onclick = ()=>marcarPagoSubasta(el.getAttribute('data-marcarpago'), el.getAttribute('data-metodo'));
+  });
+  document.querySelectorAll('[data-reabrir]').forEach(el=>{
+    el.onclick = ()=>reabrirSubasta(el.getAttribute('data-reabrir'));
+  });
+
+  // Caja
+  const efectivoContadoInput = document.getElementById('efectivoContadoInput');
+  if(efectivoContadoInput) efectivoContadoInput.oninput = (e)=>{ state.cierre.efectivoContado = e.target.value; render(); };
+  const notasCierreInput = document.getElementById('notasCierreInput');
+  if(notasCierreInput) notasCierreInput.oninput = (e)=>{ state.cierre.notas = e.target.value; };
+  const btnGuardarCierre = document.getElementById('btnGuardarCierre');
+  if(btnGuardarCierre) btnGuardarCierre.onclick = guardarCierre;
+}
+
+loadState();
+</script>
+</body>
+</html>
