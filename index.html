@@ -270,14 +270,8 @@ function uid(){ return Math.random().toString(36).slice(2,10); }
 
 let state = {
   activeGroup: 'facturacion',
-  activeSubTabByGroup: { facturacion: 'ventas', ejecucion: 'inventario' },
+  activeSubTabByGroup: { facturacion: 'ventas', ejecucion: 'productos-subasta' },
   ventas: [],
-  productosInventario: [
-    { id: uid(), nombre: 'Pizza', precio: 10, cantidadInicial: 0 },
-    { id: uid(), nombre: 'Bebida', precio: 3, cantidadInicial: 0 },
-    { id: uid(), nombre: 'Virgen', precio: 15, cantidadInicial: 0 },
-    { id: uid(), nombre: 'Vela', precio: 25, cantidadInicial: 0 }
-  ],
   premios: [],
   sorteoParticipantes: [],
   sorteoGanadores: {},
@@ -288,11 +282,6 @@ let state = {
 let uiTmp = {
   ventaMonto: '',
   ventaMetodo: 'efectivo',
-  ventaProducto: '',
-  ventaProductoOtro: '',
-  invNombre: '',
-  invPrecio: '',
-  invCantidad: '',
   nuevoPremio: '',
   partNombre: '',
   partTelefono: '',
@@ -393,54 +382,14 @@ function fmt(n){
 function registrarVenta(){
   const monto = parseFloat(uiTmp.ventaMonto);
   if(!monto || monto<=0){ alert('Ingresa un monto válido'); return; }
-  let producto = uiTmp.ventaProducto;
-  if(producto==='__otro__'){
-    producto = uiTmp.ventaProductoOtro.trim();
-  }
-  if(!producto){ alert('Elige o escribe el producto vendido'); return; }
-  state.ventas.push({ id: uid(), monto, metodo: uiTmp.ventaMetodo, producto, hora: new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'}) });
+  state.ventas.push({ id: uid(), monto, metodo: uiTmp.ventaMetodo, hora: new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'}) });
   uiTmp.ventaMonto = '';
-  uiTmp.ventaProducto = '';
-  uiTmp.ventaProductoOtro = '';
   saveState(); render();
 }
 
 function borrarVenta(id){
   state.ventas = state.ventas.filter(v=>v.id!==id);
   saveState(); render();
-}
-
-function agregarProductoInventario(){
-  const nombre = uiTmp.invNombre.trim();
-  const precio = parseFloat(uiTmp.invPrecio);
-  const cantidadInicial = parseInt(uiTmp.invCantidad) || 0;
-  if(!nombre){ alert('Ponle nombre al producto'); return; }
-  if(!precio || precio<=0){ alert('Ingresa un precio válido'); return; }
-  state.productosInventario.push({ id: uid(), nombre, precio, cantidadInicial });
-  uiTmp.invNombre=''; uiTmp.invPrecio=''; uiTmp.invCantidad='';
-  saveState(); render();
-}
-
-function editarProductoInventario(id, campo, valor){
-  const prod = state.productosInventario.find(p=>p.id===id);
-  if(!prod) return;
-  if(campo==='precio') prod.precio = parseFloat(valor) || 0;
-  else if(campo==='cantidadInicial') prod.cantidadInicial = parseInt(valor) || 0;
-  else if(campo==='nombre') prod.nombre = valor;
-  saveState();
-}
-
-function borrarProductoInventario(id){
-  state.productosInventario = state.productosInventario.filter(p=>p.id!==id);
-  saveState(); render();
-}
-
-function vendidosDeProducto(nombre){
-  return state.ventas.filter(v=>v.producto===nombre).length;
-}
-
-function recaudadoDeProducto(nombre){
-  return state.ventas.filter(v=>v.producto===nombre).reduce((a,v)=>a+v.monto,0);
 }
 
 function agregarPremio(){
@@ -592,7 +541,6 @@ const SUBTABS = {
     ['sorteo','Sorteo']
   ],
   ejecucion: [
-    ['inventario','Ventas'],
     ['productos-subasta','Subasta'],
     ['ejecucion-sorteo','Sorteo']
   ]
@@ -632,9 +580,8 @@ function render(){
     else content.innerHTML = renderSorteo();
   } else {
     const sub = state.activeSubTabByGroup.ejecucion;
-    if(sub==='inventario') content.innerHTML = renderInventarioVentas();
-    else if(sub==='productos-subasta') content.innerHTML = renderProductosSubasta();
-    else content.innerHTML = renderEjecucionSorteo();
+    if(sub==='ejecucion-sorteo') content.innerHTML = renderEjecucionSorteo();
+    else content.innerHTML = renderProductosSubasta();
   }
 
   attachHandlers();
@@ -655,18 +602,6 @@ function renderVentas(){
         <input type="number" id="ventaMontoInput" value="${uiTmp.ventaMonto}" placeholder="Ej: 25">
       </div>
       <div class="field">
-        <label>Producto</label>
-        <select id="ventaProductoSelect">
-          <option value="" ${uiTmp.ventaProducto===''?'selected':''}>Elige un producto...</option>
-          ${state.productosInventario.map(p=>{
-            const disponible = p.cantidadInicial - vendidosDeProducto(p.nombre);
-            return `<option value="${p.nombre}" ${uiTmp.ventaProducto===p.nombre?'selected':''}>${p.nombre} (${p.precio}€) · quedan ${disponible}</option>`;
-          }).join('')}
-          <option value="__otro__" ${uiTmp.ventaProducto==='__otro__'?'selected':''}>Otro...</option>
-        </select>
-        ${uiTmp.ventaProducto==='__otro__' ? `<input type="text" id="ventaProductoOtroInput" value="${uiTmp.ventaProductoOtro}" placeholder="Escribe el producto" style="margin-top:6px;">` : ''}
-      </div>
-      <div class="field">
         <label>Método de pago</label>
         <div class="row">
           <div class="chip ${uiTmp.ventaMetodo==='efectivo'?'selected':''}" data-metodo="efectivo">Efectivo</div>
@@ -682,7 +617,7 @@ function renderVentas(){
     ${state.ventas.length===0 ? '<div class="empty">Todavía no hay ventas registradas.</div>' :
       state.ventas.slice().reverse().map(v=>`
         <div class="list-item">
-          <span>${v.hora} · <strong>${v.producto||'—'}</strong> · <span class="${v.metodo==='efectivo'?'tag-efectivo':'tag-qr'}">${v.metodo==='efectivo'?'Efectivo':'QR'}</span></span>
+          <span>${v.hora} · <span class="${v.metodo==='efectivo'?'tag-efectivo':'tag-qr'}">${v.metodo==='efectivo'?'Efectivo':'QR'}</span></span>
           <span class="mono">${fmt(v.monto)}€ <button class="btn ghost" data-borrarventa="${v.id}">✕</button></span>
         </div>
       `).join('')
@@ -693,62 +628,6 @@ function renderVentas(){
     <h2>Subtotal ventas</h2>
     <div class="list-item"><span>Efectivo</span><span class="mono">${fmt(state.ventas.filter(v=>v.metodo==='efectivo').reduce((a,v)=>a+v.monto,0))}€</span></div>
     <div class="list-item"><span>QR</span><span class="mono">${fmt(state.ventas.filter(v=>v.metodo==='qr').reduce((a,v)=>a+v.monto,0))}€</span></div>
-  </div>
-  `;
-}
-
-function renderInventarioVentas(){
-  return `
-  <div class="card">
-    <h2>Añadir producto</h2>
-    <div class="row">
-      <div class="field">
-        <label>Nombre</label>
-        <input type="text" id="invNombreInput" value="${uiTmp.invNombre}">
-      </div>
-      <div class="field">
-        <label>Precio</label>
-        <input type="number" id="invPrecioInput" value="${uiTmp.invPrecio}">
-      </div>
-      <div class="field">
-        <label>Cantidad de entrada</label>
-        <input type="number" id="invCantidadInput" value="${uiTmp.invCantidad}">
-      </div>
-    </div>
-    <button class="btn secondary" id="btnAgregarProductoInventario">Añadir producto</button>
-  </div>
-
-  <div class="card">
-    <h2>Inventario (${state.productosInventario.length})</h2>
-    ${state.productosInventario.length===0 ? '<div class="empty">Todavía no hay productos cargados.</div>' :
-      state.productosInventario.map(p=>{
-        const vendidos = vendidosDeProducto(p.nombre);
-        const disponible = p.cantidadInicial - vendidos;
-        const recaudado = recaudadoDeProducto(p.nombre);
-        return `
-        <div class="premio-box">
-          <div class="top">
-            <strong>${p.nombre}</strong>
-            <button class="btn ghost" data-borrarproducto="${p.id}">✕</button>
-          </div>
-          <div class="row">
-            <div class="field">
-              <label>Precio</label>
-              <input type="number" data-editarprecio="${p.id}" value="${p.precio}">
-            </div>
-            <div class="field">
-              <label>Cantidad de entrada</label>
-              <input type="number" data-editarcantidad="${p.id}" value="${p.cantidadInicial}">
-            </div>
-          </div>
-          <div class="list-item">
-            <span>Vendidos: ${vendidos} · Recaudado: ${fmt(recaudado)}€</span>
-            <span class="mono" style="${disponible<0?'color:var(--warn);font-weight:700;':''}">Disponible: ${disponible}</span>
-          </div>
-        </div>
-        `;
-      }).join('')
-    }
   </div>
   `;
 }
@@ -1016,16 +895,6 @@ function attachHandlers(){
   });
   const ventaMontoInput = document.getElementById('ventaMontoInput');
   if(ventaMontoInput) ventaMontoInput.oninput = (e)=>{ uiTmp.ventaMonto = e.target.value; };
-  const ventaProductoSelect = document.getElementById('ventaProductoSelect');
-  if(ventaProductoSelect) ventaProductoSelect.onchange = (e)=>{
-    uiTmp.ventaProducto = e.target.value;
-    const encontrado = state.productosInventario.find(p=>p.nombre===e.target.value);
-    if(encontrado){ uiTmp.ventaMonto = String(encontrado.precio); }
-    else if(e.target.value==='__otro__'){ uiTmp.ventaMonto = ''; }
-    render();
-  };
-  const ventaProductoOtroInput = document.getElementById('ventaProductoOtroInput');
-  if(ventaProductoOtroInput) ventaProductoOtroInput.oninput = (e)=>{ uiTmp.ventaProductoOtro = e.target.value; };
   document.querySelectorAll('[data-metodo]').forEach(el=>{
     el.onclick = ()=>{ uiTmp.ventaMetodo = el.getAttribute('data-metodo'); render(); };
   });
@@ -1033,25 +902,6 @@ function attachHandlers(){
   if(btnRegistrarVenta) btnRegistrarVenta.onclick = registrarVenta;
   document.querySelectorAll('[data-borrarventa]').forEach(el=>{
     el.onclick = ()=>borrarVenta(el.getAttribute('data-borrarventa'));
-  });
-
-  // Inventario de productos (Ejecución > Ventas)
-  const invNombreInput = document.getElementById('invNombreInput');
-  if(invNombreInput) invNombreInput.oninput = (e)=>{ uiTmp.invNombre = e.target.value; };
-  const invPrecioInput = document.getElementById('invPrecioInput');
-  if(invPrecioInput) invPrecioInput.oninput = (e)=>{ uiTmp.invPrecio = e.target.value; };
-  const invCantidadInput = document.getElementById('invCantidadInput');
-  if(invCantidadInput) invCantidadInput.oninput = (e)=>{ uiTmp.invCantidad = e.target.value; };
-  const btnAgregarProductoInventario = document.getElementById('btnAgregarProductoInventario');
-  if(btnAgregarProductoInventario) btnAgregarProductoInventario.onclick = agregarProductoInventario;
-  document.querySelectorAll('[data-borrarproducto]').forEach(el=>{
-    el.onclick = ()=>borrarProductoInventario(el.getAttribute('data-borrarproducto'));
-  });
-  document.querySelectorAll('[data-editarprecio]').forEach(el=>{
-    el.onchange = (e)=>{ editarProductoInventario(el.getAttribute('data-editarprecio'), 'precio', e.target.value); render(); };
-  });
-  document.querySelectorAll('[data-editarcantidad]').forEach(el=>{
-    el.onchange = (e)=>{ editarProductoInventario(el.getAttribute('data-editarcantidad'), 'cantidadInicial', e.target.value); render(); };
   });
 
   // Sorteo - premios
