@@ -269,14 +269,20 @@ let saving = false;
 function uid(){ return Math.random().toString(36).slice(2,10); }
 
 let state = {
-  activeGroup: 'facturacion',
-  activeSubTabByGroup: { facturacion: 'ventas', ejecucion: 'productos-subasta' },
   ventas: [],
   premios: [],
   sorteoParticipantes: [],
   sorteoGanadores: {},
   subastaItems: [],
   cierre: { efectivoContado: '', notas: '' }
+};
+
+// Navegación de pestañas: es solo de esta laptop, no se sincroniza con el servidor
+// (si viviera en `state`, la sincronización automática cada 8s la pisaría con el
+// último valor guardado y te sacaría de la pestaña en la que estás).
+let nav = {
+  activeGroup: 'facturacion',
+  activeSubTabByGroup: { facturacion: 'ventas', ejecucion: 'productos-subasta' }
 };
 
 let uiTmp = {
@@ -547,39 +553,39 @@ const SUBTABS = {
 };
 
 function setGroup(grupo){
-  state.activeGroup = grupo;
+  nav.activeGroup = grupo;
   render();
 }
 
 function setSubTab(grupo, tab){
-  state.activeSubTabByGroup[grupo] = tab;
+  nav.activeSubTabByGroup[grupo] = tab;
   render();
 }
 
 function render(){
   const tabsEl = document.getElementById('tabs');
   let html = `<div class="tabs">${GRUPOS.map(([k,label])=>
-    `<button class="tab-btn ${state.activeGroup===k?'active':''}" onclick="setGroup('${k}')">${label}</button>`
+    `<button class="tab-btn ${nav.activeGroup===k?'active':''}" onclick="setGroup('${k}')">${label}</button>`
   ).join('')}</div>`;
 
-  if(state.activeGroup!=='caja'){
-    const sub = SUBTABS[state.activeGroup];
+  if(nav.activeGroup!=='caja'){
+    const sub = SUBTABS[nav.activeGroup];
     html += `<div class="subtabs">${sub.map(([k,label])=>
-      `<button class="subtab-btn ${state.activeSubTabByGroup[state.activeGroup]===k?'active':''}" onclick="setSubTab('${state.activeGroup}','${k}')">${label}</button>`
+      `<button class="subtab-btn ${nav.activeSubTabByGroup[nav.activeGroup]===k?'active':''}" onclick="setSubTab('${nav.activeGroup}','${k}')">${label}</button>`
     ).join('')}</div>`;
   }
   tabsEl.innerHTML = html;
 
   const content = document.getElementById('content');
-  if(state.activeGroup==='caja'){
+  if(nav.activeGroup==='caja'){
     content.innerHTML = renderCaja();
-  } else if(state.activeGroup==='facturacion'){
-    const sub = state.activeSubTabByGroup.facturacion;
+  } else if(nav.activeGroup==='facturacion'){
+    const sub = nav.activeSubTabByGroup.facturacion;
     if(sub==='ventas') content.innerHTML = renderVentas();
     else if(sub==='subasta') content.innerHTML = renderSubasta();
     else content.innerHTML = renderSorteo();
   } else {
-    const sub = state.activeSubTabByGroup.ejecucion;
+    const sub = nav.activeSubTabByGroup.ejecucion;
     if(sub==='ejecucion-sorteo') content.innerHTML = renderEjecucionSorteo();
     else content.innerHTML = renderProductosSubasta();
   }
