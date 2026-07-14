@@ -470,8 +470,11 @@ function registrarGanadorPremio(premioId){
   const numero = (uiTmp.numeroGanadorTmp[premioId]||'').trim();
   if(!numero){ alert('Escribe el número que salió de la cajita'); return; }
   const actuales = getGanadores(premioId);
-  if(actuales.includes(numero)){ alert('Ese número ya está registrado como ganador de este premio.'); return; }
   const pr = state.premios.find(p=>p.id===premioId);
+  // Algunos premios (donde una persona con varios tickets puede salir más de
+  // una vez) permiten repetir el mismo número; el resto lo bloquea para evitar
+  // grabar dos veces al mismo por error.
+  if(!(pr && pr.permiteRepetir) && actuales.includes(numero)){ alert('Ese número ya está registrado como ganador de este premio.'); return; }
   const cupos = cuposPremio(pr);
   if(actuales.length >= cupos){ alert(`Este premio ya tiene sus ${cupos} ganador(es). Quita alguno si necesitas corregirlo.`); return; }
   actuales.push(numero);
@@ -480,8 +483,12 @@ function registrarGanadorPremio(premioId){
   saveState(); render();
 }
 
-function quitarGanador(premioId, numero){
-  const actuales = getGanadores(premioId).filter(n=>n!==numero);
+// Quita UNA ocurrencia por su posición (importante cuando se permite repetir
+// el mismo número: no debe borrar todas las copias).
+function quitarGanador(premioId, idx){
+  const actuales = getGanadores(premioId);
+  idx = parseInt(idx);
+  if(idx>=0 && idx<actuales.length) actuales.splice(idx,1);
   if(actuales.length) state.sorteoGanadores[premioId] = actuales;
   else delete state.sorteoGanadores[premioId];
   uiTmp.numeroGanadorTmp[premioId] = '';
@@ -683,12 +690,12 @@ function renderEjecucionSorteo(){
             <strong>${pr.nombre}</strong>
             ${cupos>1?`<span class="mono">Ganadores: ${ganadores.length} de ${cupos}</span>`:''}
           </div>
-          ${ganadores.map(numero=>{
+          ${ganadores.map((numero, idx)=>{
             const ganador = buscarPorNumero(numero);
             return (ganador
                 ? `<div class="winner-banner">🏆 N.° ${numero} → ${ganador.nombre} · ${ganador.telefono}${ganador.email?' · '+ganador.email:''}</div>`
                 : `<div class="winner-banner" style="background:var(--warn);">⚠️ N.° ${numero} no coincide con ningún participante registrado. Revisa el número.</div>`
-              ) + `<button class="btn ghost" data-quitarganador="${pr.id}" data-numero="${numero}">Corregir / quitar</button>`;
+              ) + `<button class="btn ghost" data-quitarganador="${pr.id}" data-idx="${idx}">Corregir / quitar</button>`;
           }).join('')}
           ${!completo ? `
               <div class="row">
@@ -956,7 +963,7 @@ function attachHandlers(){
     el.onclick = ()=>registrarGanadorPremio(el.getAttribute('data-buscarganador'));
   });
   document.querySelectorAll('[data-quitarganador]').forEach(el=>{
-    el.onclick = ()=>quitarGanador(el.getAttribute('data-quitarganador'), el.getAttribute('data-numero'));
+    el.onclick = ()=>quitarGanador(el.getAttribute('data-quitarganador'), el.getAttribute('data-idx'));
   });
 
   // Sorteo - participantes / venta de tickets
