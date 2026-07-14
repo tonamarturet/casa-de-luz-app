@@ -451,15 +451,39 @@ function borrarParticipante(id){
   saveState(); render();
 }
 
+// Cuántos ganadores admite un premio (1 por defecto; los premios con varias
+// unidades tienen su propio campo `cupos`).
+function cuposPremio(pr){
+  return (pr && pr.cupos && pr.cupos > 0) ? pr.cupos : 1;
+}
+
+// Devuelve SIEMPRE una lista de números ganadores, aunque en la base de datos
+// esté guardado como un solo texto (formato original, un ganador por premio).
+function getGanadores(premioId){
+  const v = state.sorteoGanadores[premioId];
+  if(Array.isArray(v)) return v.slice();
+  if(typeof v === 'string' && v.trim()) return [v.trim()];
+  return [];
+}
+
 function registrarGanadorPremio(premioId){
   const numero = (uiTmp.numeroGanadorTmp[premioId]||'').trim();
   if(!numero){ alert('Escribe el número que salió de la cajita'); return; }
-  state.sorteoGanadores[premioId] = numero;
+  const actuales = getGanadores(premioId);
+  if(actuales.includes(numero)){ alert('Ese número ya está registrado como ganador de este premio.'); return; }
+  const pr = state.premios.find(p=>p.id===premioId);
+  const cupos = cuposPremio(pr);
+  if(actuales.length >= cupos){ alert(`Este premio ya tiene sus ${cupos} ganador(es). Quita alguno si necesitas corregirlo.`); return; }
+  actuales.push(numero);
+  state.sorteoGanadores[premioId] = actuales;
+  uiTmp.numeroGanadorTmp[premioId] = '';
   saveState(); render();
 }
 
-function rehacerSorteo(premioId){
-  delete state.sorteoGanadores[premioId];
+function quitarGanador(premioId, numero){
+  const actuales = getGanadores(premioId).filter(n=>n!==numero);
+  if(actuales.length) state.sorteoGanadores[premioId] = actuales;
+  else delete state.sorteoGanadores[premioId];
   uiTmp.numeroGanadorTmp[premioId] = '';
   saveState(); render();
 }
@@ -650,28 +674,31 @@ function renderEjecucionSorteo(){
     </div>
     ${state.premios.length===0 ? '<div class="empty">Añade los premios/cajitas que van a estar en el evento.</div>' :
       state.premios.map(pr=>{
-        const numeroGanador = state.sorteoGanadores[pr.id];
-        const ganador = numeroGanador ? buscarPorNumero(numeroGanador) : null;
+        const cupos = cuposPremio(pr);
+        const ganadores = getGanadores(pr.id);
+        const completo = ganadores.length >= cupos;
         return `
         <div class="premio-box">
           <div class="top">
             <strong>${pr.nombre}</strong>
+            ${cupos>1?`<span class="mono">Ganadores: ${ganadores.length} de ${cupos}</span>`:''}
           </div>
-          ${numeroGanador
-            ? (ganador
-                ? `<div class="winner-banner">🏆 N.° ${numeroGanador} → ${ganador.nombre} · ${ganador.telefono}${ganador.email?' · '+ganador.email:''}</div>`
-                : `<div class="winner-banner" style="background:var(--warn);">⚠️ N.° ${numeroGanador} no coincide con ningún participante registrado. Revisa el número.</div>`
-              ) + `<button class="btn ghost" data-rehacer="${pr.id}">Corregir / repetir</button>`
-            : `
+          ${ganadores.map(numero=>{
+            const ganador = buscarPorNumero(numero);
+            return (ganador
+                ? `<div class="winner-banner">🏆 N.° ${numero} → ${ganador.nombre} · ${ganador.telefono}${ganador.email?' · '+ganador.email:''}</div>`
+                : `<div class="winner-banner" style="background:var(--warn);">⚠️ N.° ${numero} no coincide con ningún participante registrado. Revisa el número.</div>`
+              ) + `<button class="btn ghost" data-quitarganador="${pr.id}" data-numero="${numero}">Corregir / quitar</button>`;
+          }).join('')}
+          ${!completo ? `
               <div class="row">
                 <div class="field">
                   <label>Número que salió de la cajita</label>
                   <input type="text" data-numeroganador="${pr.id}" value="${uiTmp.numeroGanadorTmp[pr.id]||''}" placeholder="Ej: 2">
                 </div>
               </div>
-              <button class="btn" data-buscarganador="${pr.id}">Buscar ganador</button>
-            `
-          }
+              <button class="btn" data-buscarganador="${pr.id}">${ganadores.length?'Añadir otro ganador':'Buscar ganador'}</button>
+            ` : ''}
           <button class="btn ghost" data-borrarpremio="${pr.id}" style="margin-left:6px;">Eliminar premio</button>
         </div>
         `;
@@ -883,13 +910,17 @@ function renderCaja(){
 
   <div class="card">
     <h2>Contactos para avisar (ganadores)</h2>
-    ${Object.keys(state.sorteoGanadores).length===0 ? '<div class="empty">Aún no se han registrado resultados del sorteo.</div>' :
-      Object.entries(state.sorteoGanadores).map(([premioId, numero])=>{
+    ${(()=>{
+      const filas = [];
+      Object.keys(state.sorteoGanadores).forEach(premioId=>{
         const premio = state.premios.find(p=>p.id===premioId);
-        const ganador = buscarPorNumero(numero);
-        return `<div class="list-item"><span>${premio?premio.nombre:'Premio'} · N.° ${numero}</span><span class="mono">${ganador ? ganador.nombre+' · '+ganador.telefono : '⚠️ no encontrado'}</span></div>`;
-      }).join('')
-    }
+        getGanadores(premioId).forEach(numero=>{
+          const ganador = buscarPorNumero(numero);
+          filas.push(`<div class="list-item"><span>${premio?premio.nombre:'Premio'} · N.° ${numero}</span><span class="mono">${ganador ? ganador.nombre+' · '+ganador.telefono : '⚠️ no encontrado'}</span></div>`);
+        });
+      });
+      return filas.length ? filas.join('') : '<div class="empty">Aún no se han registrado resultados del sorteo.</div>';
+    })()}
   </div>
   `;
 }
@@ -924,8 +955,8 @@ function attachHandlers(){
   document.querySelectorAll('[data-buscarganador]').forEach(el=>{
     el.onclick = ()=>registrarGanadorPremio(el.getAttribute('data-buscarganador'));
   });
-  document.querySelectorAll('[data-rehacer]').forEach(el=>{
-    el.onclick = ()=>rehacerSorteo(el.getAttribute('data-rehacer'));
+  document.querySelectorAll('[data-quitarganador]').forEach(el=>{
+    el.onclick = ()=>quitarGanador(el.getAttribute('data-quitarganador'), el.getAttribute('data-numero'));
   });
 
   // Sorteo - participantes / venta de tickets
